@@ -1,17 +1,26 @@
 package app
 
-import org.apache.hadoop.fs.{FileSystem, Path}
 import traits.SparkSessionWrapper
+import de.umass.lastfm.User
+import de.umass.lastfm.Caller
 
-import java.io.BufferedOutputStream
-
+import java.text.DateFormat
 object Main extends SparkSessionWrapper {
   def main(args: Array[String]) : Unit = {
-    spark.range(10).show()
+    Caller.getInstance.setUserAgent("test-beccosauro")
 
-    val numbersRdd = spark.sparkContext.parallelize((1 to 10000).toList)
-
-
+    val key = "dbf6b9f99ea1ee2762fcde6c1f17baff" //this is the key used in the Last.fm API examples
+    val user = "JRoar"
+    val chart = User.getWeeklyArtistChart(user, 10, key)
+    val format = DateFormat.getDateInstance
+    val from = format.format(chart.getFrom)
+    val to = format.format(chart.getTo)
+    System.out.printf("Charts for %s for the week from %s to %s:%n", user, from, to)
+    val artists = chart.getEntries
+    import scala.collection.JavaConversions._
+    for (artist <- artists) {
+      System.out.println(artist.getName)
+    }
 
   }
 }

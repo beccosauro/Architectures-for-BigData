@@ -1,26 +1,22 @@
 package app
 
-import traits.SparkSessionWrapper
-import de.umass.lastfm.User
 import de.umass.lastfm.Caller
+import entities.User
+import lastFm.Client
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import traits.SparkSessionWrapper
 
-import java.text.DateFormat
 object Main extends SparkSessionWrapper {
-  def main(args: Array[String]) : Unit = {
+  def main(args: Array[String]): Unit = {
     Caller.getInstance.setUserAgent("test-beccosauro")
-
-    val key = "dbf6b9f99ea1ee2762fcde6c1f17baff" //this is the key used in the Last.fm API examples
-    val user = "JRoar"
-    val chart = User.getWeeklyArtistChart(user, 10, key)
-    val format = DateFormat.getDateInstance
-    val from = format.format(chart.getFrom)
-    val to = format.format(chart.getTo)
-    System.out.printf("Charts for %s for the week from %s to %s:%n", user, from, to)
-    val artists = chart.getEntries
-    import scala.collection.JavaConversions._
-    for (artist <- artists) {
-      System.out.println(artist.getName)
-    }
+    val client  = new Client("dbf6b9f99ea1ee2762fcde6c1f17baff")
+    //val topHits = spark.createDataFrame(spark.sparkContext.parallelize(client.getTopHits(100).toList))
+    val df : DataFrame  = spark createDataFrame(
+      spark.sparkContext.parallelize(client.populate().toList)
+    )
+    df.show(1000,false)
+    df.repartition(1).write.option("header","true").mode(saveMode = "overwrite").parquet("output/test")
 
   }
 }

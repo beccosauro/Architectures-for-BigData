@@ -14,7 +14,7 @@ class Client(key: String, secret: String = "13feb8ebeb0464478b79a4ab411a754e") {
 
   def session: Session = {
     val user = "simocerio" // user name
-    val password = "Wantout216!" // user's password
+    val password = "" // user's password
 
     Authenticator.getMobileSession(user, password, key, secret)
   }

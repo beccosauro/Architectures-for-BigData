@@ -1,10 +1,5 @@
 
-lazy val commonSettings = Seq(
-  version := "0.1-SNAPSHOT",
-  organization := "com.example",
-  scalaVersion := "2.10.1",
-  test in assembly := {}
-)
+
 scalaVersion := "2.11.8"
 
 val sparkVersion = "2.1.0"
@@ -15,3 +10,8 @@ libraryDependencies ++= Seq(
   "de.u-mass" % "lastfm-java" % "0.1.2"
 
 )
+assemblyJarName in assembly := "lastFm-ETL-app.jar"
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}

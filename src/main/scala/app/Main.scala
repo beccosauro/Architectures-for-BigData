@@ -13,7 +13,7 @@ object Main extends SparkSessionWrapper with App {
       spark.sparkContext.parallelize(client.populate().toList)
     )
     df.show(1000,false)
-    df.repartition(1).write.option("header","true").mode(saveMode = "overwrite").parquet("output/test")
+    df.write.option("header","true").option("delimiter","|").mode(saveMode = "overwrite").csv("/output/test")
 
 
 }

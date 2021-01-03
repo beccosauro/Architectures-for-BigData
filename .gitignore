@@ -4,3 +4,4 @@ target
 docker-hadoop-spark-workbench/data
 uberjar
 project/target
+.bsp

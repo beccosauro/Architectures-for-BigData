@@ -1,40 +1,18 @@
 package lastFm
 
 import de.umass.lastfm._
-import entities.Tracks
+import entities.{RawData, Song}
 
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.util
+import java.util.{Date, HashMap, Map}
 import scala.collection.JavaConversions.{asScalaIterator, iterableAsScalaIterable}
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.io.Source.fromURL
 
 class Client(key: String, secret: String = "13feb8ebeb0464478b79a4ab411a754e") {
 
-  def session: Session = {
-    val user = "simocerio" // user name
-    val password = "" // user's password
-
-    Authenticator.getMobileSession(user, password, key, secret)
-  }
-
-  def getResponse(url: String): String = {
-    val html = fromURL(url.replace("api_key=", "api_key=" + key))
-    val response = html.mkString
-    html.close
-    response
-  }
-
-  def getTopHits(pageNumber: Int = 1): Iterable[Tracks] = {
-
-    Chart.getTopTracks(pageNumber, key).asScala
-      .map { t: Track =>
-        val info = Track.getInfo(t.getArtist, t.getName, key)
-        val genre = info.getTags.iterator().take(2).mkString("-")
-        Tracks(t.getName, t.getArtist, t.getPosition, t.getDuration, t.getListeners, genre)
-      }
-  }
 
   def getUsers(recurse: Int = 1, border: Set[String] = Set(), start: Boolean = true, known: Set[String] = Set()): Set[String] = {
     if (start && recurse > 0) {
@@ -51,22 +29,37 @@ class Client(key: String, secret: String = "13feb8ebeb0464478b79a4ab411a754e") {
     } else known
 
   }
-  def getDateAsString(d: Date): String = {
-    val dateFormat = new SimpleDateFormat("dd-MM-yyyy")
-    dateFormat.format(d)
-  }
-  def populate(recurse: Int = 1): Set[entities.User] = {
+  def populate(recurse: Int = 1, pageToRetrieve: Int = 1): List[RawData] = {
     val population = getUsers(recurse)
-    val dateFormat = new SimpleDateFormat("dd-MM-yyyy")
-    population.map { name: String =>
-      val infoUser = User.getRecentTracks(name, -1, 100, key)
-      val nameSong: Iterable[String]= infoUser.getPageResults.filterNot(_.isNowPlaying).map(_.getName)
-      val played: Iterable[Long] = infoUser.getPageResults
-        .filterNot(_.isNowPlaying).map(_.getPlayedWhen.toInstant.getEpochSecond)
-      val sessions: Map[String,Long] = nameSong.zip(played).toMap
-      entities.User(name,sessions)
-    }
+    population.flatMap { name: String =>
+      var (counter, limit) = (0, 30)
+      val totalPage = getRecentTracks(name, pageToRetrieve, from = 1607472000, 200, key).getTotalPages
+
+      (1 to totalPage).flatMap { pgNumber: Int =>
+        val infoUser = getRecentTracks(name, pgNumber, from = 1607472000, 200, key)
+        infoUser.getPageResults.filterNot(_.isNowPlaying).map {
+          t: Track =>
+            counter += 1
+            val duration = Track.getInfo(t.getArtist, t.getName, key).getDuration
+            if (counter == limit) {
+              Thread.sleep(3000)
+              limit += 30
+              println("Diamoci una calmata")
+            }
+            RawData(name, t.getName, t.getArtist, t.getPlayedWhen.toInstant.getEpochSecond, duration)
+        }
+      }
+    }.toList
   }
 
+  def getRecentTracks(user: String, page: Int, from: Long, limit: Int, apiKey: String): PaginatedResult[Track] = {
+    val params: util.Map[String, String] = new util.HashMap[String, String]
+    params.put("user", user)
+    params.put("limit", String.valueOf(limit))
+    params.put("page", String.valueOf(page))
+    params.put("from", String.valueOf(from))
+    val result: Result = Caller.getInstance.call("user.getRecentTracks", apiKey, params)
+    ResponseBuilder.buildPaginatedResult(result, classOf[Track])
+  }
 
 }

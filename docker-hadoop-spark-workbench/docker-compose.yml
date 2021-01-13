@@ -5,8 +5,10 @@ services:
     container_name: namenode
     volumes:
       - ./data/namenode:/hadoop/dfs/name
+      - "/etc/localtime:/etc/localtime:ro"
     environment:
       - CLUSTER_NAME=test
+      - TZ=Europe/Rome
     env_file:
       - ./hadoop.env
     ports:
@@ -17,6 +19,7 @@ services:
       - namenode
     volumes:
       - ./data/datanode:/hadoop/dfs/data
+      - "/etc/localtime:/etc/localtime:ro"
     env_file:
       - ./hadoop.env
     ports:
@@ -24,6 +27,8 @@ services:
   spark-master:
     image: bde2020/spark-master:2.1.0-hadoop2.8-hive-java8
     container_name: spark-master
+    environment:
+      - TZ=Europe/Rome
     ports:
       - 8080:8080
       - 7077:7077
@@ -60,3 +65,4 @@ services:
       - 8088:8088
     environment:
       - NAMENODE_HOST=namenode
+      - TZ=Europe/Rome

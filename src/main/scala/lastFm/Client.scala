@@ -33,16 +33,16 @@ class Client(key: String) {
       logger.info("Utenti Analizzati = " + counter + " Mancanti = " + (population.size - counter))
       counter += 1
       try {
-        val totalPage = getRecentTracks(name, 1, from = 1607472000, 200, key).getTotalPages
+        val totalPage = getRecentTracks(name, 1, from, to,200 ,key).getTotalPages
         (1 to totalPage).flatMap { pgNumber: Int =>
-          val infoUser = getRecentTracks(name, pgNumber, from = 1607472000, 200, key)
+          val infoUser = getRecentTracks(name, pgNumber, from,to, 200, key)
           infoUser.getPageResults.filterNot(_.isNowPlaying).map {
             t: Track =>
               UserTrack(name, t.getName, t.getArtist, t.getPlayedWhen.toInstant.getEpochSecond)
           }
         }
       } catch {
-        case _: Exception => logger.error("Error retrivieng song data")
+        case e: Exception => logger.error(e.getMessage)
           (1 to 2).map{_ =>UserTrack("error", "error","error",-1)}
       }
 
@@ -50,23 +50,27 @@ class Client(key: String) {
   }
 
   def getInfoTrack(artist: String, title: String): Song = {
+    val logger: Logger = Logger.getLogger("INGESTION ETL")
+
     try {
       val infoTrack = Track.getInfo(artist, title, key)
       val genreList = infoTrack.getTags.toList
       val genre = if (genreList.isEmpty) "no-genre" else genreList.head
+      Thread.sleep(200)
       Song(infoTrack.getName, infoTrack.getArtist, genre, infoTrack.getDuration)
     } catch {
-      case _: Exception => println("Error retrivieng song data")
+      case _: Exception => logger.info("Error retrivieng song data")
         Song("error", "error", "no-genre", -1)
     }
   }
 
-  def getRecentTracks(user: String, page: Int, from: Long, limit: Int, apiKey: String): PaginatedResult[Track] = {
+  def getRecentTracks(user: String, page: Int, from: Long,to: Long, limit: Int, apiKey: String): PaginatedResult[Track] = {
     val params: util.Map[String, String] = new util.HashMap[String, String]
     params.put("user", user)
     params.put("limit", String.valueOf(limit))
     params.put("page", String.valueOf(page))
     params.put("from", String.valueOf(from))
+    params.put("to", String.valueOf(to))
     val result: Result = Caller.getInstance.call("user.getRecentTracks", apiKey, params)
     ResponseBuilder.buildPaginatedResult(result, classOf[Track])
   }

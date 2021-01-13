@@ -18,16 +18,16 @@ class Client(key: String) {
     else if (!start && recurse > 0) {
       val discovered: Set[String] = border
         .map(u => User
-          .getFriends(u, key)
+          .getFriends(u,false,1,200, key)
           .map(_.getName).toSet
         ).reduce(_ union _)
       getUsers(recurse - 1, discovered diff known, start = false, discovered union border)
     } else known
   }
 
-  def populate(recurse: Int = 1, from: Long = 0, to: Long = 0,limit:Int): List[UserTrack] = {
+  def populate(recurse: Int = 1, from: Long = 0, to: Long = 0,limit:Int =0): List[UserTrack] = {
     val logger: Logger = Logger.getLogger("INGESTION ETL")
-    val population = getUsers(recurse).par.take(limit)
+    val population = if (limit > 0 )getUsers(recurse).par.take(limit) else getUsers(recurse).par
     var counter = 0
     population.flatMap { name: String =>
       logger.info("Utenti Analizzati = " + counter + " Mancanti = " + (population.size - counter))

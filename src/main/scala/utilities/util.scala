@@ -10,7 +10,7 @@ object util {
     c.set(Calendar.HOUR_OF_DAY, 0)
     c.set(Calendar.MINUTE, 0)
     c.set(Calendar.SECOND, 0)
-    c.getTimeInMillis
+    c.getTimeInMillis /1000
   }
   def getMidnightYesterday: Long ={
     val c = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
@@ -18,7 +18,7 @@ object util {
     c.set(Calendar.HOUR_OF_DAY, 0)
     c.set(Calendar.MINUTE, 0)
     c.set(Calendar.SECOND, 0)
-    c.getTimeInMillis
+    c.getTimeInMillis / 1000
   }
 
 }

@@ -12,7 +12,7 @@ import utilities.util
 object Main extends SparkSessionWrapper with App {
   Caller.getInstance.setUserAgent("test-beccosauro")
   val client = new Client("dbf6b9f99ea1ee2762fcde6c1f17baff")
-  val userData = client.populate(2,limit = 400,from = util.getMidnightYesterday, to = util.getMidnightToday)
+  val userData = client.populate(2,from = util.getMidnightYesterday, to = util.getMidnightToday)
   val logger: Logger = Logger.getLogger("INGESTION ETL")
   var counter = 0
   logger.info("Numero canzoni da aggiungere" + userData.size)

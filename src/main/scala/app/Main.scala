@@ -8,12 +8,18 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
 import traits.SparkSessionWrapper
 import utilities.util
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.SparkSession
 
-object Main extends SparkSessionWrapper with App {
+object Main extends App {
+  
   Caller.getInstance.setUserAgent("test-beccosauro")
   val client = new Client("dbf6b9f99ea1ee2762fcde6c1f17baff")
-  val userData = client.populate(2, limit = 1000, from = util.getMidnightYesterday, to = util.getMidnightToday)
+  val conf = new SparkConf().setMaster("spark://spark-master:7077").setAppName("SparkWriteApplication")
+  val spark = SparkSession.builder().config(conf).getOrCreate()
   val logger: Logger = Logger.getLogger("INGESTION ETL")
+
+  val userData = client.populate(2, limit = 1000, from = util.getMidnightYesterday, to = util.getMidnightToday)
   var counter = 0
   logger.info("Numero canzoni da aggiungere" + userData.size)
   val userDataDf = (spark createDataFrame spark.sparkContext.parallelize(userData))

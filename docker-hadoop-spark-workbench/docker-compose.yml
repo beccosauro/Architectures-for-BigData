@@ -54,6 +54,8 @@ services:
   pyspark-notebook:
     container_name: pyspark-notebook
     image: jupyter/pyspark-notebook
+    volumes:
+      - /home/becco/Desktop/notebook:/home/jovyan
     env_file:
       - ./hadoop.env
     ports:
@@ -66,3 +68,4 @@ services:
     environment:
       - NAMENODE_HOST=namenode
       - TZ=Europe/Rome
+

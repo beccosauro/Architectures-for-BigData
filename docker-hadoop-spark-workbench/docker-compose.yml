@@ -59,7 +59,7 @@ services:
     env_file:
       - ./hadoop.env
     ports:
-      - "9101:9101"
+      - 9101:9101
     command: bash -c "pip3 install findspark ipyparallel && jupyter notebook --ip=* --port=9101 -NotebookApp.token='' --NotebookApp.password=''"
   hue:
     image: bde2020/hdfs-filebrowser:3.11

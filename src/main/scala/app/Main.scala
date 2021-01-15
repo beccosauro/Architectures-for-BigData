@@ -6,7 +6,6 @@ import lastFm.Client
 import org.apache.log4j.Logger
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
-import traits.SparkSessionWrapper
 import utilities.util
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
@@ -19,7 +18,7 @@ object Main extends App {
   val spark = SparkSession.builder().config(conf).getOrCreate()
   val logger: Logger = Logger.getLogger("INGESTION ETL")
 
-  val userData = client.populate(2, limit = 1000, from = util.getMidnightYesterday, to = util.getMidnightToday)
+  val userData = client.populate(2, limit = 1000, from = 1578614422, to = util.getMidnightToday)
   var counter = 0
   logger.info("Numero canzoni da aggiungere" + userData.size)
   val userDataDf = (spark createDataFrame spark.sparkContext.parallelize(userData))
@@ -36,11 +35,11 @@ object Main extends App {
 
   val songData: List[Song] = userData.map {
     ut: UserTrack =>(ut.artist, ut.title)
-  }.distinct.toVector.par.map { t: (String, String) =>
+  }.toVector.par.map { t: (String, String) =>
     logger.info("Canzoni analizzate: " + counter + " Mancanti:" + (userData.size - counter))
     counter += 1
     Thread.sleep(200)
-    client.getInfoTrack(t._2, t._1)
+    client.getInfoTrack(t._1, t._2)
   }.toList
 
 
@@ -49,7 +48,7 @@ object Main extends App {
     .withColumn("year", year(to_date(col("date"))))
     .withColumn("month", month(to_date(col("date"))))
     .withColumn("day", dayofmonth(to_date(col("date"))))
-  songDataDf.write
+  songDataDf.distinct().write
     .mode("append")
     .partitionBy("year", "month", "day")
     .parquet("/data/raw/track")

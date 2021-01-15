@@ -25,9 +25,9 @@ class Client(key: String) {
     } else known
   }
 
-  def populate(recurse: Int = 1, from: Long = 0, to: Long = 0,limit:Int =0): List[UserTrack] = {
+  def populate(recurse: Int = 1, from: Long = 0, to: Long = 0,limit:Int =100): List[UserTrack] = {
     val logger: Logger = Logger.getLogger("INGESTION ETL")
-    val population = if (limit > 0 )getUsers(recurse).par.take(limit) else getUsers(recurse).par
+    val population = getUsers(recurse).toList.reverse.par.take(limit)
     var counter = 0
     population.flatMap { name: String =>
       logger.info("Utenti Analizzati = " + counter + " Mancanti = " + (population.size - counter))
@@ -38,7 +38,7 @@ class Client(key: String) {
           val infoUser = getRecentTracks(name, pgNumber, from,to, 200, key)
           infoUser.getPageResults.filterNot(_.isNowPlaying).map {
             t: Track =>
-              UserTrack(name, t.getName, t.getArtist, t.getPlayedWhen.toInstant.getEpochSecond)
+              UserTrack(name,t.getArtist, t.getName,  t.getPlayedWhen.toInstant.getEpochSecond)
           }
         }
       } catch {

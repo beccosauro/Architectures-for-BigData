@@ -34,7 +34,7 @@ class Client(key: String) {
       counter += 1
       try {
         val totalPage = getRecentTracks(name, 1, from, to,200 ,key).getTotalPages
-        (1 to totalPage).flatMap { pgNumber: Int =>
+        (1 to totalPage).par.flatMap { pgNumber: Int =>
           val infoUser = getRecentTracks(name, pgNumber, from,to, 200, key)
           infoUser.getPageResults.filterNot(_.isNowPlaying).map {
             t: Track =>
@@ -55,12 +55,15 @@ class Client(key: String) {
     try {
       val infoTrack = Track.getInfo(artist, title, key)
       val genreList = infoTrack.getTags.toList
+
       val genre = if (genreList.isEmpty) "no-genre" else genreList.head
-      Thread.sleep(200)
-      Song(infoTrack.getName, infoTrack.getArtist, genre, infoTrack.getDuration)
+      val song = Song(infoTrack.getName, infoTrack.getArtist, genre, infoTrack.getDuration)
+      logger.info(song.toString)
+      song
     } catch {
-      case _: Exception => logger.info("Error retrivieng song data")
+      case e: Exception => logger.info(e.getMessage)
         Song("error", "error", "no-genre", -1)
+
     }
   }
 

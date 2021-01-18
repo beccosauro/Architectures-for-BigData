@@ -18,7 +18,7 @@ object Main extends App {
   val spark = SparkSession.builder().config(conf).getOrCreate()
   val logger: Logger = Logger.getLogger("INGESTION ETL")
 
-  val userData = client.populate(2, limit = 200, from = 1607991619, to = util.getMidnightToday)
+  val userData = client.populate(2,limit = 1000, from = util.getMidnightYesterday, to = util.getMidnightToday)
   var counter = 0
   logger.info("Numero canzoni da aggiungere" + userData.size)
   val userDataDf = (spark createDataFrame spark.sparkContext.parallelize(userData))
@@ -27,12 +27,12 @@ object Main extends App {
     .withColumn("month", month(col("date")))
     .withColumn("day", dayofmonth(col("date")))
 
-  val songData: List[Song] = userData.map {
+  val songData: List[Song] = userData.distinct.map {
     ut: UserTrack =>(ut.artist, ut.title)
   }.par.map { t: (String, String) =>
     logger.info("Canzoni analizzate: " + counter + " Mancanti:" + (userData.size - counter))
     counter += 1
-    Thread.sleep(200)
+    Thread.sleep(250)
     client.getInfoTrack(t._1, t._2)
   }.toList
 

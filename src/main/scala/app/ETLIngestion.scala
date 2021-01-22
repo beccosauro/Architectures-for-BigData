@@ -58,4 +58,5 @@ object ETLIngestion {
       .partitionBy("year", "month", "day")
       .parquet("/data/raw/track")
   }
+  Logger.getLogger("INGESTION ETL").info("PROCESSO INGESTION CONCLUSO CORRETTAMENTE")
 }

@@ -1,36 +1,36 @@
 package app
 
 import de.umass.lastfm.Caller
-import entities.{Song, UserTrack}
 import lastFm.Client
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.functions._
-import utilities.util
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.expressions.Window
-
-object ETL {
-  def main (args : Array[String]) {
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{Row, SparkSession}
+import utilities.util
+object ETLIngestion {
+  def main(args: Array[String]) {
     Caller.getInstance.setUserAgent("test-beccosauro")
     val client = new Client("dbf6b9f99ea1ee2762fcde6c1f17baff")
     val conf = new SparkConf().setMaster("spark://spark-master:7077").setAppName("SparkWriteApplication")
     val spark = SparkSession.builder().config(conf).getOrCreate()
+    import spark.implicits._
 
     val logger: Logger = Logger.getLogger("INGESTION ETL")
-    //
-    //  val userData = client.populate(2,limit = 1000, from = util.getMidnightYesterday, to = util.getMidnightToday)
-    //  var counter = 0
-    //  logger.info("Numero canzoni da aggiungere" + userData.size)
-    //  val userDataDf = (spark createDataFrame spark.sparkContext.parallelize(userData))
-    //    .withColumn("date", to_date(from_unixtime(col("startSong"))))
-    //    .withColumn("year", year(col("date")))
-    //    .withColumn("month", month(col("date")))
-    //    .withColumn("day", dayofmonth(col("date")))
-    //
-    //
-    //  logger.info("-LOG: NUMERO DISTINCT"+ userData.distinct +"NUMERO TOTALE: "+ userData.distinct)
-    import spark.implicits._
+    val userData = client.populate(2, limit = 500, from = util.getMidnightYesterday, to = util.getMidnightToday)
+    logger.info("Numero canzoni da aggiungere" + userData.size)
+    val userDataDf = (spark createDataFrame spark.sparkContext.parallelize(userData))
+      .withColumn("date", to_date(from_unixtime(col("startSong"))))
+      .withColumn("year", year(col("date")))
+      .withColumn("month", month(col("date")))
+      .withColumn("day", dayofmonth(col("date")))
+
+    userDataDf.write
+      .mode("append")
+      .partitionBy("username", "year", "month", "day")
+      .parquet("/data/raw/user_track_listening")
+
+
     val allTrack = spark.read.parquet("/data/raw/user_track_listening")
       .select("artist", "title")
       .distinct()
@@ -46,28 +46,16 @@ object ETL {
         c.getInfoTrack(r.getString(0), r.getString(1))
       }
     }.toDF("title", "artist", "genre", "duration")
-    updatedTrack.show()
     logger.info(updatedTrack.count())
 
-    //  val songData: List[Song] = userData.distinct.map {
-    //    ut: UserTrack =>(ut.artist, ut.title)
-    //  }
-    //
-    //  val songDataDf = (spark createDataFrame spark.sparkContext.parallelize(songData))
-    //    .withColumn("date", current_date())
-    //    .withColumn("year", year(to_date(col("date"))))
-    //    .withColumn("month", month(to_date(col("date"))))
-    //    .withColumn("day", dayofmonth(to_date(col("date"))))
-
-
-    //  userDataDf.write
-    //    .mode("append")
-    //    .partitionBy("username", "year", "month", "day")
-    //    .parquet("/data/raw/user_track_listening")
-    //
-    //  songDataDf.distinct().write
-    //    .mode("append")
-    //    .partitionBy("year", "month", "day")
-    //    .parquet("/data/raw/track")
+    updatedTrack
+      .withColumn("date", to_date(from_unixtime(col("startSong"))))
+      .withColumn("year", year(col("date")))
+      .withColumn("month", month(col("date")))
+      .withColumn("day", dayofmonth(col("date")))
+      .write
+      .mode("append")
+      .partitionBy("year", "month", "day")
+      .parquet("/data/raw/track")
   }
 }

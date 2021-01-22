@@ -49,10 +49,10 @@ object ETLIngestion {
     logger.info(updatedTrack.count())
 
     updatedTrack
-      .withColumn("date", to_date(from_unixtime(col("startSong"))))
-      .withColumn("year", year(col("date")))
-      .withColumn("month", month(col("date")))
-      .withColumn("day", dayofmonth(col("date")))
+      .withColumn("date", current_date())
+      .withColumn("year", year(to_date(col("date"))))
+      .withColumn("month", month(to_date(col("date"))))
+      .withColumn("day", dayofmonth(to_date(col("date"))))
       .write
       .mode("append")
       .partitionBy("year", "month", "day")

@@ -54,7 +54,7 @@ object ETLIngestion {
       .withColumn("month", month(to_date(col("date"))))
       .withColumn("day", dayofmonth(to_date(col("date"))))
       .write
-      .mode("append")
+      .mode("overwrite")
       .partitionBy("year", "month", "day")
       .parquet("/data/raw/track")
   }

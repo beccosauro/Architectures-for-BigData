@@ -25,16 +25,12 @@ object ETLIngestion {
       .withColumn("month", month(col("date")))
       .withColumn("day", dayofmonth(col("date")))
 
-    userDataDf.write
-      .mode("append")
-      .partitionBy("username", "year", "month", "day")
-      .parquet("/data/raw/user_track_listening")
-
 
     val allTrack = spark.read.parquet("/data/raw/user_track_listening")
       .select("artist", "title")
       .distinct()
       .withColumn("index", row_number().over(Window.orderBy("artist", "title")))
+      .repartition(5)
       .cache()
     val totSong = spark.sparkContext.broadcast(allTrack.count())
     totSong.value
@@ -43,10 +39,15 @@ object ETLIngestion {
       iter.map { r: Row =>
         val c = new Client("dbf6b9f99ea1ee2762fcde6c1f17baff")
         logger.info("song processed: " + r.getInt(2) + " of: " + totSong.value)
+        Thread.sleep(100)
         c.getInfoTrack(r.getString(0), r.getString(1))
       }
     }.toDF("title", "artist", "genre", "duration")
-    logger.info(updatedTrack.count())
+
+    userDataDf.write
+      .mode("append")
+      .partitionBy("username", "year", "month", "day")
+      .parquet("/data/raw/user_track_listening")
 
     updatedTrack
       .withColumn("date", current_date())
@@ -57,6 +58,8 @@ object ETLIngestion {
       .mode("append")
       .partitionBy("year", "month", "day")
       .parquet("/data/raw/track")
+
+    Logger.getLogger("INGESTION ETL").info("PROCESSO INGESTION CONCLUSO CORRETTAMENTE")
+
   }
-  Logger.getLogger("INGESTION ETL").info("PROCESSO INGESTION CONCLUSO CORRETTAMENTE")
 }

@@ -7,7 +7,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Row, SparkSession}
-import utilities.util._
+import utilities.Util._
 object ETLIngestion {
   def main(args: Array[String]) {
     Caller.getInstance.setUserAgent("test-beccosauro")
@@ -18,7 +18,7 @@ object ETLIngestion {
 
     import spark.implicits._
     val last_ingest = "/ingestion_state"
-    val userData = client.populate(2, limit = 500, from = getEpochLastIngestion(last_ingest), to = getMidnightToday)
+    val userData = client.populate(2,limit = 150, from = getEpochLastIngestion(last_ingest), to = getMidnightToday)
     val userDataDf = (spark createDataFrame spark.sparkContext.parallelize(userData))
       .withColumn("date", to_date(from_unixtime(col("startSong"))))
       .withColumn("year", year(col("date")))
@@ -30,16 +30,16 @@ object ETLIngestion {
       .select("artist", "title")
       .distinct()
       .withColumn("index", row_number().over(Window.orderBy("artist", "title")))
-      .repartition(10)
+      .repartition(7)
       .cache()
     val totSong = spark.sparkContext.broadcast(allTrack.count())
 
     val updatedTrack = allTrack.rdd.mapPartitions { iter =>
       val logger: Logger = Logger.getLogger("INGESTION ETL")
       iter.map { r: Row =>
-        val c = new Client("dbf6b9f99ea1ee2762fcde6c1f17baff")
+        val c = new Client("57aa2a0e91cfc483292b592ff7c54a43")
         logger.info("song processed: " + r.getInt(2) + " of: " + totSong.value)
-        Thread.sleep(270)
+        Thread.sleep(200)
         c.getInfoTrack(r.getString(0), r.getString(1))
       }
     }.toDF("title", "artist", "genre", "duration")

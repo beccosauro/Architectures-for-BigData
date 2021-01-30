@@ -30,8 +30,7 @@ object ETLIngestion {
       .select("artist", "title")
       .distinct()
       .withColumn("index", row_number().over(Window.orderBy("artist", "title")))
-      .repartition(7)
-      .cache()
+      .repartition(8)
     val totSong = spark.sparkContext.broadcast(allTrack.count())
 
     val updatedTrack = allTrack.rdd.mapPartitions { iter =>

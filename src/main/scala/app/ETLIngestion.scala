@@ -33,7 +33,7 @@ object ETLIngestion {
       .repartition(8)
     val totSong = spark.sparkContext.broadcast(allTrack.count())
 
-    val updatedTrack = allTrack.rdd.mapPartitions { iter =>
+    val updatedTrack = userDataDf.select("artist","title").rdd.distinct.union(allTrack.rdd).mapPartitions { iter =>
       val logger: Logger = Logger.getLogger("INGESTION ETL")
       iter.map { r: Row =>
         val c = new Client("57aa2a0e91cfc483292b592ff7c54a43")
@@ -42,11 +42,6 @@ object ETLIngestion {
         c.getInfoTrack(r.getString(0), r.getString(1))
       }
     }.toDF("title", "artist", "genre", "duration")
-
-    userDataDf.write
-      .mode("append")
-      .partitionBy("username", "year", "month", "day")
-      .parquet("/data/raw/user_track_listening")
 
     updatedTrack
       .withColumn("date", current_date())
@@ -57,6 +52,11 @@ object ETLIngestion {
       .mode("append")
       .partitionBy("year", "month", "day")
       .parquet("/data/raw/track")
+
+    userDataDf.write
+      .mode("append")
+      .partitionBy("username", "year", "month", "day")
+      .parquet("/data/raw/user_track_listening")
 
     Logger.getLogger("INGESTION ETL").info("PROCESSO INGESTION CONCLUSO CORRETTAMENTE")
     writeLastIngestion(last_ingest)

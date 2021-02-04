@@ -44,13 +44,6 @@ services:
       - 8081:8081
     env_file:
       - ./hadoop.env
-  spark-notebook:
-    image: bde2020/spark-notebook:2.1.0-hadoop2.8-hive
-    container_name: spark-notebook
-    env_file:
-      - ./hadoop.env
-    ports:
-      - 9001:9001
   pyspark-notebook:
     container_name: pyspark-notebook
     image: jupyter/pyspark-notebook

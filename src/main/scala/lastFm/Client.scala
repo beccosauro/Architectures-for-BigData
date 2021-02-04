@@ -62,7 +62,7 @@ class Client(key: String) {
       song
     } catch {
       case e: Exception => logger.info(e.getMessage)
-        Song("error", "error", "no-genre", -1)
+        Song(artist, title, "no-genre", -1)
 
     }
   }

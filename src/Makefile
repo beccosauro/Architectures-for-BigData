@@ -1,10 +1,11 @@
+start-cluster:
+	cd ../docker-hadoop-spark-workbench ; \
+	./start-hadoop-spark-workbench.sh
 
-
-get-uberjar:
+get-uberjar: start-cluster
 	cd .. ; \
 	sbt assembly ; \
 	cp -f target/scala-2.11/lastFm-ETL-app.jar src/uberjar/
-
 
 run-etl: get-uberjar
 	docker run --rm --network docker-hadoop-spark-workbench_default --env-file ../docker-hadoop-spark-workbench/hadoop.env -e SPARK_MASTER=spark://spark-master:7077 --volume $(shell pwd)/uberjar:/uberjar bde2020/spark-base:2.1.0-hadoop2.8-hive-java8 /spark/bin/spark-submit --master spark://spark-master:7077 --class app.ETLIngestion /uberjar/lastFm-ETL-app.jar
